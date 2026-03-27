@@ -2,13 +2,18 @@
 
 > [根目录](../CLAUDE.md) > **skills-v2**
 
-**Last Updated**: 2026-03-26 (v1.8.0)
+**Last Updated**: 2026-03-27 (v1.8.1)
 
 ---
 
 ## 变更记录 (Changelog)
 
 > 完整变更历史请查看 [CHANGELOG.md](./CHANGELOG.md)
+
+### 2026-03-27 (v1.8.1)
+- 🐛 **WORKDIR 路径推断修复**：20 个命令模板强制 `pwd`/`cd` 获取工作目录，禁止从 `$HOME` 推断，修复沙箱/云端环境路径错误
+- 🐛 **spec-init 目录防御**：Step 3 禁止 `cd` 到其他路径
+- 🐛 **Windows 兼容**：WORKDIR 获取支持 `pwd`（Unix）+ `cd`（Windows CMD）
 
 ### 2026-03-26 (v1.8.0)
 - 🐛 **Gemini session_id 解析修复**：修复 Gemini CLI init 事件前 MCP 文本导致 JSON 解析失败，恢复 session_id 捕获

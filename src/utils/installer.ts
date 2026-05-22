@@ -5,6 +5,7 @@ import fs from 'fs-extra'
 import { basename, join } from 'pathe'
 import { getLegacyCommandIds, getWorkflowById } from './installer-data'
 import { PACKAGE_ROOT, injectConfigVariables, replaceHomePathsInTemplate } from './installer-template'
+import { readCcgConfig } from './config'
 import { installSkillCommands } from './skill-registry'
 
 // ═══════════════════════════════════════════════════════
@@ -517,7 +518,19 @@ export async function installCodexMode(): Promise<{ success: boolean, message: s
 
     const agentsMdSrc = join(codexTemplateDir, 'AGENTS.md')
     if (await fs.pathExists(agentsMdSrc)) {
-      await fs.copy(agentsMdSrc, join(codexHome, 'AGENTS.md'), { overwrite: true })
+      const config = await readCcgConfig()
+      if (config) {
+        let content = await fs.readFile(agentsMdSrc, 'utf-8')
+        content = injectConfigVariables(content, {
+          routing: config.routing as any,
+          liteMode: config.performance?.liteMode || false,
+          mcpProvider: config.mcp?.provider || 'skip',
+        })
+        await fs.writeFile(join(codexHome, 'AGENTS.md'), content, 'utf-8')
+      }
+      else {
+        await fs.copy(agentsMdSrc, join(codexHome, 'AGENTS.md'), { overwrite: true })
+      }
     }
 
     // hooks/

@@ -862,8 +862,11 @@ func runCodexTaskWithContext(parentCtx context.Context, taskSpec TaskSpec, backe
 	// multi-line args in argv). On Windows: npm's .cmd wrapper routes through
 	// cmd.exe which truncates multi-line args at the first newline (Issue #129).
 	// Use stdin pipe instead and omit -p so the CLI reads from piped stdin.
-	promptDirect := useStdin && (cfg.Backend == "gemini" || cfg.Backend == "antigravity") && !isWindows()
-	promptStdinPipe := useStdin && (cfg.Backend == "gemini" || cfg.Backend == "antigravity") && isWindows()
+	// Antigravity (agy) does NOT read stdin at all — it requires -p on every
+	// platform, including Windows (#146). The cmd.exe truncation risk is
+	// accepted because a truncated prompt is better than a silent no-op.
+	promptDirect := useStdin && ((cfg.Backend == "gemini" && !isWindows()) || cfg.Backend == "antigravity")
+	promptStdinPipe := useStdin && cfg.Backend == "gemini" && isWindows()
 	if useStdin && !promptDirect && !promptStdinPipe {
 		targetArg = "-"
 	}

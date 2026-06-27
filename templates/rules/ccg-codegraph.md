@@ -1,36 +1,39 @@
-# CodeGraph MCP 使用指南
+# 代码检索工具选择指南
 
-## 何时使用 `codegraph_explore`
+## CodeGraph（最高优先级）
 
-CodeGraph 是本地预索引的代码知识图谱（SQLite + Tree-sitter），通过 MCP 暴露 `codegraph_explore` 单一工具。**在以下场景优先使用它，而非 grep/Read/Glob 循环**：
+**会话首次需要检索代码时**，先检查项目根目录是否存在 `.codegraph/`：
+- **存在** → 直接用 `codegraph_explore`，一次调用返回源码+调用链+影响范围
+- **不存在** → 运行 `codegraph init` 建索引（通常几秒），建好后再用 `codegraph_explore`
+
+建索引只需一次，后续自动增量同步。
+
+### 何时用 codegraph_explore
 
 | 场景 | 示例查询 |
 |------|----------|
-| 函数/类的调用链追踪 | "handleSubmit 被哪些组件调用" |
-| 修改影响范围（blast radius）| "改 UserService.create 会影响哪些文件" |
-| 架构/流程理解 | "请求从 router 到 database 的完整流转" |
-| 跨模块依赖分析 | "AuthMiddleware 依赖哪些模块" |
-| 读取已知符号的源码 + 上下文 | 直接传文件名或函数名，返回带行号的源码 + 调用关系 |
+| 调用链追踪 | `handleSubmit callers` |
+| 修改影响范围 | `UserService.create impact` |
+| 架构流程理解 | `request router to database flow` |
+| 读取符号源码+上下文 | 直接传文件名或函数名 |
 
-## 与 fast-context 的分工
+### 反模式
 
-- **CodeGraph** → 结构性查询（调用链、依赖、影响范围、精确符号查找）—— 本地图谱，零网络
-- **fast-context** → 语义模糊搜索（"处理用户登录的逻辑在哪"）—— 远端 AI 语义匹配
-- **grep/Glob** → 精确文本匹配（已知变量名/字符串的全局查找替换）
+- ❌ 先 grep 再用 CodeGraph 验证（直接 CodeGraph）
+- ❌ 手动拼调用链（一次 explore 自动解析）
+- ❌ 对返回的源码再 Read（已是同等内容）
 
-## 查询技巧
+## fast-context（语义补充）
 
-- 传入具体的符号名效果最佳（如 `UserService.create` 而非 "创建用户的代码"）
-- 追踪调用流时，给出起点和终点符号名（如 `handleRequest renderResponse`）
-- 返回的源码已带行号，可直接用于 Edit，无需再 Read
-- 编辑文件后注意 staleness 提示——有 ⚠️ 标记的文件应直接 Read 而非信任缓存
+`codegraph_explore` 不擅长的场景用 `fast_context_search`：
+- 自然语言描述功能（"处理登录的逻辑在哪"）
+- 不确定符号名，只知道功能描述
+- 英文查询效果优于中文
 
-## 反模式（避免）
+## 优先级总结
 
-- ❌ 先 grep 找到符号再用 CodeGraph 验证（直接用 CodeGraph）
-- ❌ 手动拼接调用链（一次 `codegraph_explore` 自动解析，包括动态分派）
-- ❌ 对 CodeGraph 返回的源码再用 Read 重新读取（已是同等内容）
-
-## 前提条件
-
-项目根目录须有 `.codegraph/` 索引目录（用户运行 `codegraph init` 创建）。若无索引，CodeGraph 工具会报告此状态，此时回退到 fast-context / grep。
+```
+codegraph_explore → 结构查询（调用链/影响/依赖）— 本地，最快最准
+fast_context_search → 语义模糊搜索 — 远端 AI
+grep → 精确文本匹配（已知字符串）
+```

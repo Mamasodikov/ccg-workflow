@@ -9,7 +9,6 @@ import { i18n, initI18n } from '../i18n'
 import { createDefaultConfig, ensureCcgDir, getCcgDir, readCcgConfig, writeCcgConfig } from '../utils/config'
 import { getAllCommandIds, getCoreCommandIds, installAceTool, installAceToolRs, installContextWeaver, installFastContext, installMcpServer, installWorkflows, showBinaryDownloadWarning, syncMcpToCodex, syncMcpToGemini, writeFastContextPrompt } from '../utils/installer'
 import { isWindows } from '../utils/platform'
-import { PACKAGE_ROOT } from '../utils/installer-template'
 import { migrateToV1_4_0, needsMigration } from '../utils/migration'
 
 /**
@@ -1046,16 +1045,8 @@ export async function init(options: InitOptions = {}): Promise<void> {
         ['-y', '@colbymchenry/codegraph@latest', 'serve', '--mcp'],
       )
       if (cgResult.success) {
-        // Write usage rule
-        const cgRuleSrc = join(PACKAGE_ROOT, 'templates', 'rules', 'ccg-codegraph.md')
-        const cgRuleDest = join(homedir(), '.claude', 'rules', 'ccg-codegraph.md')
-        if (await fs.pathExists(cgRuleSrc)) {
-          await fs.ensureDir(join(homedir(), '.claude', 'rules'))
-          await fs.copy(cgRuleSrc, cgRuleDest, { overwrite: true })
-        }
         console.log()
         console.log(`    ${ansis.green('✓')} CodeGraph MCP ${ansis.gray('→ ~/.claude.json')}`)
-        console.log(`    ${ansis.green('✓')} CodeGraph rule ${ansis.gray('→ ~/.claude/rules/ccg-codegraph.md')}`)
       }
       else {
         console.log()

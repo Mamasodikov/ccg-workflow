@@ -533,6 +533,7 @@ export async function installCodexMode(): Promise<{ success: boolean, message: s
       // (antigravity/codex) when no config, so placeholders never leak.
       let content = await fs.readFile(agentsMdSrc, 'utf-8')
       content = injectConfigVariables(content, injectOpts)
+      content = replaceHomePathsInTemplate(content, join(homedir(), '.claude'))
       await fs.writeFile(join(codexHome, 'AGENTS.md'), content, 'utf-8')
     }
 
